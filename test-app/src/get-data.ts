@@ -1,5 +1,3 @@
 export default async () => {
-  return {
-    foo: 'bar!',
-  }
+  return await fetch('https://jsonplaceholder.typicode.com/todos/2').then((r) => r.json())
 }

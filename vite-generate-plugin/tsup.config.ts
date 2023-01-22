@@ -1,9 +1,9 @@
 import { defineConfig } from 'tsup'
 
-export default defineConfig({
+export default defineConfig(({ watch }) => ({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
-  // dts: true,
+  dts: !watch,
   minify: true,
   noExternal: ['javascript-stringify'],
-})
+}))

@@ -2,53 +2,34 @@ import { stringify } from 'javascript-stringify'
 import { createServer, Plugin } from 'vite'
 
 export async function createViteGeneratePlugin(): Promise<Plugin> {
-  // let server: ViteDevServer
-
   const loadModule = await createModuleLoader()
+
+  const modCache = new WeakMap<object, string | Promise<string>>()
+
+  const transform = (result: any) => {
+    return `export default ${stringify(result)}`
+  }
 
   return {
     name: 'vite-generate-plugin',
     enforce: 'pre',
-    // configureServer(_server) {
-    //   const server = _server
 
-    //   // const { moduleGraph } = server
-    //   // const watcher = server.watcher
-
-    //   // const normalGlob = normalizePath(glob)
-    //   // const absoluteGlob = join(root, normalGlob)
-    //   // const globMatch = picomatch(absoluteGlob)
-
-    //   // watcher.on('all', (eventName, path) => {
-    //   //   const filePath = normalizePath(path)
-    //   //   if (globMatch(filePath)) {
-    //   //     if (eventName === 'add' || eventName === 'addDir') {
-    //   //       const module = moduleGraph.getModuleById(virtualImportNameResolved)
-    //   //       if (module) moduleGraph.invalidateModule(module)
-    //   //     }
-
-    //   //     onUpdateBatched({ filePath, eventName })
-    //   //   }
-    //   // })
-    // },
-
-    //@ts-expect-error
     async load(id) {
       if (id.endsWith('?generate')) {
         const modId = id.slice(0, -'?generate'.length)
-        const mod = await loadModule(modId)
 
-        let dataString: string
         try {
-          const result = mod.default()
-          const data = result.then ? await result : result
-          dataString = stringify(data)!
-        } catch (e: any) {
-          dataString = `(() => { throw ${stringify(e.message)})() }`
-        }
+          const mod = await loadModule(modId)
+          if (modCache.has(mod)) return modCache.get(mod)
 
-        console.log('load', id, dataString)
-        return `export default ${dataString}`
+          const result = mod.default()
+          const data = result.then ? result.then(transform) : transform(result)
+          modCache.set(mod, data)
+
+          return data
+        } catch (e: any) {
+          return `export default (() => { throw ${stringify(e.message)})() }`
+        }
       }
     },
   }

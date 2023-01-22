@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsup"
+    "build": "tsup",
+    "build:watch": "tsup --watch"
   },
   "peerDependencies": {
     "vite": "^4.0.0"
